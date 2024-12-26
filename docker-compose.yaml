@@ -1,0 +1,44 @@
+services:
+  prometheus-write:
+    image: prom/prometheus
+    container_name: prometheus-write
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/writer:/etc/prometheus
+      - prometheus-write-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - prometheus
+
+  prometheus-read:
+    image: prom/prometheus
+    container_name: prometheus-read
+    ports:
+      - "9070:9090"
+    volumes:
+      - ./config/reader:/etc/prometheus
+      - prometheus-read-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.enable-remote-write-receiver'
+    networks:
+      - prometheus
+
+  app-metrics:
+    build:
+      context: app/
+    container_name: app-metrics
+    ports:
+      - "5000:5000"
+    networks:
+      - prometheus
+
+networks:
+  prometheus:
+    driver: bridge
+
+volumes:
+  prometheus-write-data:
+  prometheus-read-data:
