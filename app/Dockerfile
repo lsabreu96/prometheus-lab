@@ -1,15 +1,21 @@
 # Usando a imagem base do Python
 FROM python:3.9-slim
 
+# Instala compilador C para rodar o uwsgi
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    python3-dev \
+    gcc \
+    libpcre3-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # Definindo o diretório de trabalho
 WORKDIR /app
 
-# Copiando o arquivo de requisitos e instalando dependências
-COPY requirements.txt requirements.txt
-RUN pip install -r requirements.txt
-
 # Copiando o código do aplicativo
-COPY app.py app.py
+COPY . /app/
+RUN pip install -r requirements.txt --no-cache-dir
 
 # Comando para rodar o aplicativo
-CMD ["python", "app.py"]
+CMD ["uwsgi", "--ini", "app.ini"]
