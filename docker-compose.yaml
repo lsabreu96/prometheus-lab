@@ -1,7 +1,6 @@
 services:
   prometheus-write:
-    image: prom/prometheus
-    container_name: prometheus-write
+    image: prom/prometheus:v3.1.0
     ports:
       - "9090:9090"
     volumes:
@@ -17,8 +16,7 @@ services:
     user: "1000:998"
 
   prometheus-read:
-    image: prom/prometheus
-    container_name: prometheus-read
+    image: prom/prometheus:v3.1.0
     ports:
       - "9070:9090"
     volumes:
@@ -40,6 +38,19 @@ services:
       - "5000:5000"
     networks:
       - prometheus
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    ports:
+      - "3000:3000"
+    networks:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus-write
+      - prometheus-read
 
 networks:
   prometheus:
