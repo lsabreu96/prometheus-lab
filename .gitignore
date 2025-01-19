@@ -1,2 +1,3 @@
 prometheus-read-data
 prometheus-write-data
+**/__pycache__
