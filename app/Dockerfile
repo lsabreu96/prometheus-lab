@@ -1,5 +1,5 @@
 # Usando a imagem base do Python
-FROM python:3.9-slim
+FROM python:3.11-slim
 
 # Instala compilador C para rodar o uwsgi
 RUN apt-get update && apt-get install -y \
@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y \
 
 # Definindo o diretório de trabalho
 WORKDIR /app
+
+ENV API_TOKEN=123456789
 
 # Copiando o código do aplicativo
 COPY . /app/
