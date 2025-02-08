@@ -6,14 +6,15 @@ services:
     volumes:
       - ./config/writer:/etc/prometheus
       - ./prometheus-write-data:/prometheus
-      - /var/run/docker.sock:/var/run/docker.sock
+      # - /var/run/docker.sock:/var/run/docker.sock # descomente caso vá subir 
+      # o prometheus para permitir dockersd
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
     networks:
       - prometheus
     # 998 é o resultado getent group docker. Grupo docker é o grupo que tem permissão de acessar
     # o /var/run/docker.sock
-    user: "1000:998"
+    # user: "1000:998"
 
   prometheus-read:
     image: prom/prometheus:v3.1.0
@@ -28,7 +29,7 @@ services:
     networks:
       - prometheus
     # O 998 é o mesmo motivo de cima, mas estou usando um outro usuário para criação
-    user: "1000:998"
+    # user: "1000:998"
 
   app-metrics:
     build:
