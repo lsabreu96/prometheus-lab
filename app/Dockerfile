@@ -13,8 +13,6 @@ RUN apt-get update && apt-get install -y \
 # Definindo o diretório de trabalho
 WORKDIR /app
 
-ENV API_TOKEN=123456789
-
 # Copiando o código do aplicativo
 COPY . /app/
 RUN pip install -r requirements.txt --no-cache-dir
