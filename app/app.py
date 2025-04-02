@@ -1,8 +1,9 @@
 import os
-from flask import Flask, Response, request
 import logging
+import time
+from flask import Flask, Response, request
 from db import DbManager
-from metrics import contador, get_registry
+from metrics import contador, get_registry, tempo_de_requisicao
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from start import startup
 
@@ -12,11 +13,24 @@ app = Flask(__name__)
 db_manager = startup()
 
 
+@app.before_request
+def start_time():
+    request.start_time = time.time()
+
+
+@app.after_request
+def log_request(response):
+    request_duration = time.time() - request.start_time
+    tempo_de_requisicao.labels(request.path).observe(request_duration)
+    return response
+
+
 @app.route('/')
 def hello():
     return "Olá"
 
 
+@tempo_de_requisicao.time()
 @app.route('/cadastrar', methods=['POST'])
 def submit():
     data = request.get_json()
@@ -41,6 +55,7 @@ def submit():
     return Response("Cadastro realizado", status=200, mimetype='text/plain')
 
 
+@tempo_de_requisicao.time()
 @app.route('/consultar', methods=['GET'])
 def consultar():
     nome = request.args.get('nome')
