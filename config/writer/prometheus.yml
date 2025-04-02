@@ -27,7 +27,7 @@ scrape_configs:
       type: 'Bearer'
       credentials: '123456789'
     static_configs:
-      - targets: ['app-metrics:5000']
+      - targets: ['app:5000']
 
 remote_write:
   - url: "http://prometheus-read:9090/api/v1/write"

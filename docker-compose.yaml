@@ -9,7 +9,7 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
     networks:
-      - prometheus
+      - app_app_network
 
   prometheus-read:
     image: prom/prometheus:v3.1.0
@@ -22,21 +22,21 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--web.enable-remote-write-receiver'
     networks:
-      - prometheus
+      - app_app_network
 
   grafana:
     image: grafana/grafana:11.4.0
     ports:
       - "3000:3000"
     networks:
-      - prometheus
+      - app_app_network
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
 
 networks:
-  prometheus:
-    driver: bridge
+  app_app_network:
+    external: true
 
 volumes:
   prometheus-write-data:
