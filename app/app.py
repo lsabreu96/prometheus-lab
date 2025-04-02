@@ -2,30 +2,15 @@ import os
 from flask import Flask, Response, request
 import logging
 from db import DbManager
-logging.basicConfig(level=logging.INFO)
+from metrics import contador, get_registry
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from start import startup
+
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+db_manager = startup()
 
-def startup():
-
-    global db_manager
-    db_manager = DbManager()
-    db_manager.start_connection_pool()    
-    conn = db_manager.get_connection_from_pool()
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS cadastro (
-            id SERIAL PRIMARY KEY,
-            nome VARCHAR(100),
-            idade INT
-        )
-    """)
-    conn.commit()
-    # Close the cursor and return the connection to the pool
-    cursor.close()
-    db_manager.release_connection(conn)
-
-startup()
 
 @app.route('/')
 def hello():
@@ -36,7 +21,12 @@ def hello():
 def submit():
     data = request.get_json()
     if not data or not all(key in data for key in ['nome', 'idade']):
-        return Response("Payload inválido. Certifique-se de incluir os campos 'nome', 'idade'.", status=400, mimetype='text/plain')
+        contador.labels('/cadastrar', '400').inc()
+        return \
+            Response(
+                "Payload inválido. Certifique-se de incluir os campos 'nome', 'idade'.", 
+                status=400, mimetype='text/plain'
+            )
     
     nome = data['nome']
     idade = data['idade']
@@ -47,6 +37,7 @@ def submit():
     conn.commit()
     cursor.close()
     db_manager.release_connection(conn)
+    contador.labels('/cadastrar', '200').inc()
     return Response("Cadastro realizado", status=200, mimetype='text/plain')
 
 
@@ -57,17 +48,26 @@ def consultar():
 
     conn = db_manager.get_connection_from_pool()
     cursor = conn.cursor()
-    query = "SELECT * FROM cadastro WHERE nome = {} AND idade = {}".format(nome, idade)
+    query = "SELECT * FROM cadastro WHERE nome = '{}' AND idade = '{}'".format(nome, idade)
     cursor.execute(query)
+
     rows = cursor.fetchall()
 
     if not rows:
+        contador.labels('/consultar', '404').inc()
         return Response("Nenhum registro encontrado", status=404, mimetype='text/plain')
     else:
+        contador.labels('/consultar', '200').inc()
         response = ""
         for row in rows:
-            response += f"ID: {row[0]}, Nome: {row[1]}, Idade: {row[2]}, Endereço: {row[3]}\n"
+            response += f"ID: {row[0]}, Nome: {row[1]}, Idade: {row[2]}\n"
         return Response(response, status=200, mimetype='text/plain')
-    # Close the cursor and return the connection to the pool
+
     cursor.close()
     db_manager.release_connection(conn)
+
+
+@app.route('/metrics')
+def metrics():
+    registry = get_registry()
+    return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST)
